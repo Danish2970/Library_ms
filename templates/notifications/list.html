@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block page_title %}Notifications{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    {% if notifications %}
+      {% for n in notifications %}
+      <div class="flex gap-3 px-4 py-3 border-b border-gray-100 last:border-0 {% if not n.is_read %}bg-indigo-50{% endif %}">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
+          {% if n.notification_type == 'OVERDUE' %}bg-red-100 text-red-600
+          {% elif n.notification_type == 'DUE_REMINDER' %}bg-yellow-100 text-yellow-600
+          {% elif n.notification_type == 'NEW_ARRIVAL' %}bg-green-100 text-green-600
+          {% elif n.notification_type == 'FINE' %}bg-orange-100 text-orange-600
+          {% else %}bg-indigo-100 text-indigo-600{% endif %}">
+          {% if n.notification_type == 'OVERDUE' %}⚠{% elif n.notification_type == 'DUE_REMINDER' %}🔔
+          {% elif n.notification_type == 'NEW_ARRIVAL' %}📚{% elif n.notification_type == 'FINE' %}💰
+          {% else %}ℹ{% endif %}
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-gray-800">{{ n.title }}</p>
+          <p class="text-xs text-gray-500 mt-0.5">{{ n.message }}</p>
+          <p class="text-xs text-gray-400 mt-1">{{ n.created_at|timesince }} ago</p>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="text-center py-16 text-gray-400">
+        <p class="text-4xl mb-3">🔔</p>
+        <p class="font-medium">No notifications yet</p>
+        <p class="text-sm mt-1">You're all caught up!</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

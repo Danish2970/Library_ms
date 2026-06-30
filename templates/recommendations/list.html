@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block page_title %}AI Book Recommendations{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <p class="text-sm text-gray-500">Personalised picks based on your reading history.</p>
+</div>
+
+{% if recommendations %}
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+  {% for rec in recommendations %}
+  <a href="{% url 'books:detail' rec.book.pk %}" class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md hover:border-indigo-300 transition group">
+    {% if rec.book.cover_image %}
+      <img src="{{ rec.book.cover_image.url }}" class="w-full h-40 object-cover">
+    {% else %}
+      <div class="w-full h-40 bg-indigo-50 flex items-center justify-center text-4xl">📖</div>
+    {% endif %}
+    <div class="p-3">
+      <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 group-hover:text-indigo-700">{{ rec.book.title }}</h3>
+      <p class="text-xs text-gray-500 mt-1">{{ rec.book.author }}</p>
+      <div class="mt-2 flex items-center justify-between">
+        <span class="text-xs text-indigo-600">{{ rec.book.get_genre_display }}</span>
+        <span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">
+          {{ rec.score|floatformat:0 }}% match
+        </span>
+      </div>
+      <p class="text-xs text-gray-400 mt-1">{{ rec.reason }}</p>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="bg-white border border-gray-200 rounded-xl p-12 text-center text-gray-400">
+  <p class="text-5xl mb-4">🤖</p>
+  <p class="font-medium text-gray-600">No recommendations yet</p>
+  <p class="text-sm mt-2">Borrow and return a few books so the AI can learn your preferences.</p>
+  <a href="{% url 'books:list' %}" class="inline-block mt-4 bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm hover:bg-indigo-800 transition">Browse Catalog</a>
+</div>
+{% endif %}
+{% endblock %}

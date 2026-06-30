@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ book.title }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+    <div class="flex gap-6">
+      {% if book.cover_image %}
+        <img src="{{ book.cover_image.url }}" class="w-36 h-48 object-cover rounded-lg flex-shrink-0">
+      {% else %}
+        <div class="w-36 h-48 bg-indigo-50 rounded-lg flex items-center justify-center text-5xl flex-shrink-0">📖</div>
+      {% endif %}
+      <div class="flex-1">
+        <div class="flex items-start justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold text-gray-900">{{ book.title }}</h1>
+            <p class="text-gray-500 mt-1">by {{ book.author }}</p>
+          </div>
+          {% if user.is_librarian %}
+          <div class="flex gap-2">
+            <a href="{% url 'books:edit' book.pk %}" class="px-3 py-1.5 border border-gray-300 text-sm rounded-lg hover:bg-gray-50">Edit</a>
+            <a href="{% url 'books:delete' book.pk %}" class="px-3 py-1.5 border border-red-200 text-red-600 text-sm rounded-lg hover:bg-red-50">Delete</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
+          <div><span class="text-gray-400">ISBN:</span> <span class="text-gray-700">{{ book.isbn }}</span></div>
+          <div><span class="text-gray-400">Genre:</span> <span class="text-gray-700">{{ book.get_genre_display }}</span></div>
+          <div><span class="text-gray-400">Publisher:</span> <span class="text-gray-700">{{ book.publisher|default:"—" }}</span></div>
+          <div><span class="text-gray-400">Year:</span> <span class="text-gray-700">{{ book.publication_year|default:"—" }}</span></div>
+          <div><span class="text-gray-400">Language:</span> <span class="text-gray-700">{{ book.language }}</span></div>
+          <div><span class="text-gray-400">Pages:</span> <span class="text-gray-700">{{ book.pages|default:"—" }}</span></div>
+          <div><span class="text-gray-400">Location:</span> <span class="text-gray-700">{{ book.location|default:"—" }}</span></div>
+          <div><span class="text-gray-400">Times borrowed:</span> <span class="text-gray-700">{{ borrow_count }}</span></div>
+        </div>
+
+        <div class="flex items-center gap-4 mt-4">
+          <span class="px-3 py-1 rounded-full text-sm font-medium {% if book.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-600{% endif %}">
+            {% if book.is_available %}{{ book.available_quantity }} of {{ book.total_quantity }} available{% else %}Currently unavailable{% endif %}
+          </span>
+          <span class="text-sm text-yellow-600">★ {{ avg_rating }}/5</span>
+        </div>
+
+        {% if book.description %}
+        <p class="text-gray-600 text-sm mt-4 leading-relaxed">{{ book.description }}</p>
+        {% endif %}
+
+        {% if request.user.is_librarian %}
+        <a href="{% url 'borrowings:issue' %}" class="inline-block mt-4 bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm hover:bg-indigo-800 transition">Issue This Book</a>
+        {% else %}
+          {% if book.is_available %}
+          <form action="{% url 'borrowings:borrow_student' book.pk %}" method="post" class="inline-block mt-4">
+            {% csrf_token %}
+            <button type="submit" class="bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm hover:bg-indigo-800 transition">Borrow This Book</button>
+          </form>
+          {% else %}
+          <button disabled class="inline-block mt-4 bg-gray-300 text-gray-500 cursor-not-allowed px-5 py-2 rounded-lg text-sm">Out of Stock</button>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Ratings -->
+  <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+    <h2 class="font-semibold text-gray-800 mb-4">Ratings & Reviews</h2>
+    {% if ratings %}
+      {% for rating in ratings %}
+      <div class="py-3 border-b border-gray-100 last:border-0">
+        <div class="flex items-center gap-2">
+          <span class="font-medium text-sm text-gray-800">{{ rating.user.get_full_name|default:rating.user.username }}</span>
+          <span class="text-yellow-500 text-sm">{% for i in "12345" %}{% if forloop.counter <= rating.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+          <span class="text-xs text-gray-400">{{ rating.created_at|date:"d M Y" }}</span>
+        </div>
+        {% if rating.review %}<p class="text-sm text-gray-600 mt-1">{{ rating.review }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-gray-400 text-sm">No reviews yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Rate this book (students only) -->
+  {% if user.is_student %}
+  <div class="bg-white border border-gray-200 rounded-xl p-6">
+    <h2 class="font-semibold text-gray-800 mb-4">{% if user_rating %}Update Your Rating{% else %}Rate This Book{% endif %}</h2>
+    <form method="post">
+      {% csrf_token %}
+      <div class="flex gap-4 items-start">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Rating</label>
+          <select name="rating" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            {% for i in "12345" %}
+            <option value="{{ forloop.counter }}" {% if user_rating and user_rating.rating == forloop.counter %}selected{% endif %}>
+              {{ forloop.counter }} star{% if forloop.counter != 1 %}s{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Review (optional)</label>
+          <textarea name="review" rows="2" placeholder="Write your thoughts..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">{{ user_rating.review|default:'' }}</textarea>
+        </div>
+        <div class="pt-5">
+          <button type="submit" class="bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-800">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

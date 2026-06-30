@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block page_title %}My Dashboard{% endblock %}
+{% block content %}
+
+<!-- Stats row -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <p class="text-3xl font-semibold text-indigo-700">{{ active_borrows.count }}</p>
+    <p class="text-xs text-gray-400 mt-1 uppercase tracking-wide">Currently Borrowed</p>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <p class="text-3xl font-semibold text-green-600">{{ history_count }}</p>
+    <p class="text-xs text-gray-400 mt-1 uppercase tracking-wide">Books Read</p>
+  </div>
+  <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+    <p class="text-3xl font-semibold {% if total_fine > 0 %}text-red-600{% else %}text-gray-700{% endif %}">₹{{ total_fine }}</p>
+    <p class="text-xs text-gray-400 mt-1 uppercase tracking-wide">Total Fine</p>
+  </div>
+</div>
+
+<!-- Active borrows -->
+{% if active_borrows %}
+<div class="bg-white border border-gray-200 rounded-xl p-5 mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="font-semibold text-gray-800">Currently Borrowed</h2>
+    <a href="{% url 'borrowings:my_borrows' %}" class="text-xs text-indigo-600 hover:underline">View all</a>
+  </div>
+  <div class="space-y-3">
+    {% for b in active_borrows %}
+    <div class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 {% if b.status == 'OVERDUE' %}border-red-200 bg-red-50{% endif %}">
+      <div class="w-8 h-11 bg-indigo-50 rounded flex items-center justify-center text-lg flex-shrink-0">📖</div>
+      <div class="flex-1 min-w-0">
+        <a href="{% url 'books:detail' b.book.pk %}" class="text-sm font-medium text-gray-800 hover:text-indigo-600 truncate block">{{ b.book.title }}</a>
+        <p class="text-xs text-gray-400">{{ b.book.author }}</p>
+      </div>
+      <div class="text-right flex-shrink-0">
+        {% if b.status == 'OVERDUE' %}
+          <span class="text-xs text-red-600 font-medium">OVERDUE</span>
+          <p class="text-xs text-red-500">Fine: ₹{{ b.fine_amount }}</p>
+        {% else %}
+          {% with d=b.days_remaining %}
+          <span class="text-xs {% if d <= 2 %}text-yellow-600 font-medium{% else %}text-gray-500{% endif %}">
+            {% if d == 0 %}Due today!{% elif d == 1 %}1 day left{% else %}{{ d }} days left{% endif %}
+          </span>
+          {% endwith %}
+          <p class="text-xs text-gray-400">{{ b.due_date|date:"d M Y" }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- AI Recommendations -->
+{% if recommendations %}
+<div class="bg-white border border-gray-200 rounded-xl p-5">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="font-semibold text-gray-800">📚 Recommended for You</h2>
+    <a href="{% url 'recommendations:list' %}" class="text-xs text-indigo-600 hover:underline">See all</a>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+    {% for rec in recommendations %}
+    <div class="border border-gray-100 rounded-lg p-3 hover:border-indigo-300 hover:shadow-sm transition">
+      <a href="{% url 'books:detail' rec.book.pk %}" class="block">
+        <p class="text-sm font-medium text-gray-800 line-clamp-2">{{ rec.book.title }}</p>
+        <p class="text-xs text-gray-400 mt-1">{{ rec.book.author }}</p>
+        <div class="flex items-center justify-between mt-2 mb-2">
+          <span class="text-xs text-indigo-600">{{ rec.book.get_genre_display }}</span>
+          <span class="text-xs text-gray-400">{{ rec.score|floatformat:0 }}% match</span>
+        </div>
+      </a>
+      {% if rec.book.is_available %}
+      <form action="{% url 'borrowings:borrow_student' rec.book.pk %}" method="post" class="block w-full">
+        {% csrf_token %}
+        <button type="submit" class="w-full bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-600 hover:text-white transition px-3 py-1.5 rounded-lg text-xs font-medium">Borrow</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="bg-white border border-gray-200 rounded-xl p-5">
+  <h2 class="font-semibold text-gray-800 mb-2">📚 Recommendations</h2>
+  <p class="text-sm text-gray-500">Borrow a few books and our AI will start recommending titles based on your reading history.</p>
+  <a href="{% url 'books:list' %}" class="inline-block mt-3 text-sm text-indigo-600 hover:underline">Browse the catalog →</a>
+</div>
+{% endif %}
+
+{% endblock %}

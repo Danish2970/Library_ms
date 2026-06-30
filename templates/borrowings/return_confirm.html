@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block page_title %}Return Book{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto">
+  <div class="bg-white border border-gray-200 rounded-xl p-6">
+    <h2 class="font-semibold text-gray-800 mb-4">Confirm Book Return</h2>
+    <div class="bg-gray-50 rounded-lg p-4 mb-6 space-y-2 text-sm">
+      <div class="flex justify-between"><span class="text-gray-500">Book:</span><span class="font-medium text-gray-800">{{ borrowing.book.title }}</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Student:</span><span class="text-gray-700">{{ borrowing.user.get_full_name }}</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Issued:</span><span class="text-gray-700">{{ borrowing.issued_date|date:"d M Y" }}</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Due date:</span><span class="text-gray-700">{{ borrowing.due_date|date:"d M Y" }}</span></div>
+      {% if fine_preview > 0 %}
+      <div class="flex justify-between border-t border-gray-200 pt-2 mt-2">
+        <span class="text-red-600 font-medium">Fine due:</span>
+        <span class="text-red-600 font-bold">₹{{ fine_preview }}</span>
+      </div>
+      {% if days_remaining < 0 %}
+      <p class="text-xs text-red-500">Overdue by {{ days_remaining|cut:"-" }} day(s) × ₹2/day</p>
+      {% endif %}
+      {% else %}
+      <div class="flex justify-between border-t border-gray-200 pt-2 mt-2">
+        <span class="text-green-600 font-medium">Fine:</span>
+        <span class="text-green-600 font-medium">None ✓</span>
+      </div>
+      {% endif %}
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="flex gap-3">
+        <button type="submit" class="flex-1 bg-green-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-green-700 transition">
+          Confirm Return
+        </button>
+        <a href="{% url 'borrowings:all_borrows' %}" class="flex-1 text-center py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

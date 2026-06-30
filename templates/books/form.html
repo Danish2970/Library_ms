@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ action }} Book{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white border border-gray-200 rounded-xl p-6">
+    <h2 class="font-semibold text-gray-800 mb-6">{{ action }} Book</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="grid grid-cols-2 gap-4">
+        {% for field in form %}
+        <div class="{% if field.name == 'description' %}col-span-2{% endif %}">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            {{ field.label }}{% if field.field.required %} *{% endif %}
+          </label>
+          {{ field }}
+          {% if field.errors %}
+          <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% if form.non_field_errors %}
+      <div class="mt-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+        {{ form.non_field_errors.0 }}
+      </div>
+      {% endif %}
+      <div class="flex gap-3 mt-6">
+        <button type="submit" class="bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-indigo-800 transition">
+          {{ action }} Book
+        </button>
+        <a href="{% url 'books:list' %}" class="px-6 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+<style>
+  input[type=text], input[type=number], input[type=file], textarea, select {
+    width: 100%; padding: 8px 12px; border: 1px solid #d1d5db;
+    border-radius: 8px; font-size: 14px; outline: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+</style>
+{% endblock %}
